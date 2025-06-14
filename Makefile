@@ -2,7 +2,7 @@
 # Definitions
 ##############################
 
-REQUIRED_BINS = svn wget java python
+REQUIRED_BINS = wget java python
 
 ##############################
 # Rules
@@ -51,23 +51,41 @@ common:
 
 deps:
 	$(foreach bin,$(REQUIRED_BINS),\
-	    $(if $(shell command -v $(bin) 2> /dev/null),$(info Found `$(bin)`),$(error Please install `$(bin)`)))
+		$(if $(shell command -v $(bin) 2> /dev/null),$(info Found `$(bin)`),$(error Please install `$(bin)`)))
 	mkdir -p build/third-party-downloads
 	wget -N https://unpkg.com/google-closure-compiler-java/compiler.jar;
 	mv -f compiler.jar build/third-party-downloads/closure-compiler.jar;
-
 	mkdir -p appengine/third-party
 	wget -N https://unpkg.com/@babel/standalone@7.14.8/babel.min.js
 	mv babel.min.js appengine/third-party/
-	@# GitHub doesn't support git archive, so download files using svn.
-	svn export --force https://github.com/ajaxorg/ace-builds/trunk/src-min-noconflict/ appengine/third-party/ace
+	@# Download ace-builds
+	wget -N https://github.com/ajaxorg/ace-builds/archive/refs/heads/master.zip -O ace-builds.zip
+	unzip -o ace-builds.zip -d appengine/third-party/
+	mkdir -p appengine/third-party/ace
+	cp -r appengine/third-party/ace-builds-master/src-min-noconflict/* appengine/third-party/ace/
+	rm -rf appengine/third-party/ace-builds-master ace-builds.zip
+
 	mkdir -p appengine/third-party/blockly
-	svn export --force https://github.com/NeilFraser/blockly-for-BG/trunk/ appengine/third-party/blockly
-	svn export --force https://github.com/CreateJS/SoundJS/trunk/lib/ appengine/third-party/SoundJS
+	wget -N https://github.com/NeilFraser/blockly-for-BG/archive/refs/heads/master.zip -O blockly-for-BG.zip
+	unzip -o blockly-for-BG.zip -d appengine/third-party/
+	cp -r appengine/third-party/blockly-for-BG-master/* appengine/third-party/blockly/
+	rm -rf appengine/third-party/blockly-for-BG-master blockly-for-BG.zip
+
+	wget -N https://github.com/CreateJS/SoundJS/archive/refs/heads/master.zip -O SoundJS.zip
+	unzip -o SoundJS.zip -d appengine/third-party/
+	mkdir -p appengine/third-party/SoundJS
+	cp -r appengine/third-party/SoundJS-master/lib/* appengine/third-party/SoundJS/
+	rm -rf appengine/third-party/SoundJS-master SoundJS.zip
+
 	cp third-party/base.js appengine/third-party/
 	cp -R third-party/soundfonts appengine/third-party/
 
-	svn export --force https://github.com/NeilFraser/JS-Interpreter/trunk/ appengine/third-party/JS-Interpreter
+	wget -N https://github.com/NeilFraser/JS-Interpreter/archive/refs/heads/master.zip -O JS-Interpreter.zip
+	unzip -o JS-Interpreter.zip -d appengine/third-party/
+	mkdir -p appengine/third-party/JS-Interpreter
+	cp -r appengine/third-party/JS-Interpreter-master/* appengine/third-party/JS-Interpreter/
+	rm -rf appengine/third-party/JS-Interpreter-master JS-Interpreter.zip
+
 	@# Compile JS-Interpreter using SIMPLE_OPTIMIZATIONS because the Music game needs to mess with the stack.
 	java -jar build/third-party-downloads/closure-compiler.jar\
 	  --language_out ECMASCRIPT5\
